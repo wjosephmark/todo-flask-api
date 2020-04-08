@@ -56,8 +56,8 @@ def add_movie():
     title = request.json["title"]
     year = request.json["year"]
     rating = request.json["rating"]
-    genre = request.genre["genre"]
-    starring = request.starring["starring"]
+    genre = request.json["genre"]
+    starring = request.json["starring"]
 
     new_movie = Movie(title, year, rating, genre, starring)
     
@@ -72,13 +72,15 @@ def add_movie():
 def update_movie(id):
     movie = Movies.query.get(id)
 
+
     title = request.json["title"]
     year = request.json["year"]
     rating = request.json["rating"]
-    genre = request.genre["genre"]
-    starring = request.starring["starring"]
+    genre = request.json["genre"]
+    starring = request.json["starring"]
 
-    movie.release_year = release_year
+    movie.title = title
+    movie.year = year
     movie.rating = rating
     movie.genre = genre
     movie.starring = starring
