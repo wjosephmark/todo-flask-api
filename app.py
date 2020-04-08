@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from flask_cors import flask_cors
+from flask_heroku import Heroku
 import os
 
 app = Flask(__name__)
+CORS(app)
+heroku = Heroku(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "app.sqlite")
@@ -11,78 +15,86 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "ap
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
-class Todo(db.Model):
-    __tablename__ = "todos"
+class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    done = db.Column(db.Boolean)
+    year = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.String(12), nullable=False)
+    genre = db.Column(db.String(16), nullable=False)
+    starring = db.Column(db.String(64), nullable=False)
 
-    def __init__(self, title, done):
+    def __init__(self, title, year, rating, starring, genre):
         self.title = title
-        self.done = done
+        self.year = year
+        self.rating = rating
+        self.genre = genre
+        self.starring = starring
 
-class TodoSchema(ma.Schema):
+class MovieSchema(ma.Schema):
     class Meta:
-        fields = ("id", "title", "done")
+        fields = ("id", "title", "year", "rating", "genre", "starring")
 
-todo_schema = TodoSchema()
-todos_schema = TodoSchema(many=True)
-
-@app.route("/", methods=["GET"])
-def home():
-    return "<h1>ToDo Flask API</h1>"
+movie_schema = MovieSchema()
+movies_schema = MovieSchema(many=True)
 
 #GET
-@app.route("/todos", methods=["GET"])
-def get_todos():
-    all_todos = Todo.query.all()
-    result = todos_schema.dump(all_todos)
+@app.route("/viewmovies", methods=["GET"])
+def get_movies():
+    all_movies = Movie.query.all()
+    result = movies_schema.dump(all_movies)
     return jsonify(result)
 
 #GET ONE BY ID
-@app.route("/todo/<id>", methods=["GET"])
-def get_todo(id):
-    todo = Todo.query.get(id)
-
-    result = todo_schema.dump(todo)
-    return jsonify(result)
+@app.route("/viewmovies/<id>", methods=["GET"])
+def get_movie(id):
+    movie = Movie.query.get(id)
+    return movie_schema.jsonify(movie)
 
 #POST
-
-@app.route('/todo', methods=["POST"])
-def add_todo():
+@app.route("/sharemovie", methods=["POST"])
+def add_movie():
     title = request.json["title"]
-    done = request.json["done"]
+    year = request.json["year"]
+    rating = request.json["rating"]
+    genre = request.genre["genre"]
+    starring = request.starring["starring"]
 
-    new_todo = Todo(title, done)
+    new_movie = Movie(title, year, rating, genre, starring)
     
-    db.session.add(new_todo)
+    db.session.add(new_movie)
     db.session.commit()
 
-    todo = Todo.query.get(new_todo.id)
-    return todo_schema.jsonify(todo)
+    movie = Movie.query.get(new_movie.id)
+    return movie_schema.jsonify(movie)
 
 #PUT / PATCH
-@app.route("/todo/<id>", methods=["PATCH"])
-def update_todo(id):
-    todo = Todo.query.get(id)
+@app.route("/movie/<id>", methods=["PUT"])
+def update_movie(id):
+    movie = Movies.query.get(id)
 
-    new_done = request.json["done"]
+    title = request.json["title"]
+    year = request.json["year"]
+    rating = request.json["rating"]
+    genre = request.genre["genre"]
+    starring = request.starring["starring"]
 
-    todo.done = new_done
+    movie.release_year = release_year
+    movie.rating = rating
+    movie.genre = genre
+    movie.starring = starring
 
     db.session.commit()
-    return todo_schema.jsonify(todo)
+    return movie_schema.jsonify(movie)
 
 #DELETE
-@app.route("/todo/<id>", methods=["DELETE"])
-def delete_todo(id):
-    record = Todo.query.get(id)
+@app.route("/movie/<id>", methods=["DELETE"])
+def delete_movie(id):
+    record = Movie.query.get(id)
 
     db.session.delete(record)
     db.session.commit()
 
-    return jsonify("DELETED THAT ISH")
+    return jsonify("DELETION SUCCESSFUL")
 
 if __name__ == "__main__":
     app.debug = True
